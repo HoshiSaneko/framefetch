@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "FrameFetch",
+  "version": "0.1.0",
+  "identifier": "app.framefetch.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "FrameFetch",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 960,
+        "minHeight": 640,
+        "backgroundColor": "#F6F8FB",
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: asset: http://asset.localhost https://*.xhscdn.com https://*.xiaohongshu.com https://*.hdslb.com https://*.biliimg.com https://*.douyinpic.com https://*.byteimg.com https://*.ibyteimg.com https://*.douyinstatic.com; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost; font-src 'self' data:; media-src 'self' asset: http://asset.localhost https://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "bin/": "bin/"
+    }
+  }
+}

@@ -1,0 +1,128 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { DouyinLibrary } from "./DouyinLibrary";
+import { api } from "./bridge";
+afterEach(() => {cleanup(); vi.restoreAllMocks();});
+const item = {id:"123", title:"作品一", author:"作者", cover:null, url:"https://www.douyin.com/video/123", images:0};
+it("selects folders directly and creates whole-folder tasks without browsing their pages", async()=>{
+  const library=vi.spyOn(api,"douyinLibrary").mockResolvedValue({items:[{...item,id:"11",title:"旅行",count:32},{...item,id:"22",title:"学习",count:8}],cursor:"0",hasMore:false});
+  const enqueue=vi.spyOn(api,"enqueueDouyinBatch").mockResolvedValueOnce().mockRejectedValueOnce("暂时失败");
+  const close=vi.fn();
+  render(<DouyinLibrary initialKind="folders" onAdded={async()=>{}} onQueued={close}/>);
+  await screen.findByText("32 个作品");
+  fireEvent.click(screen.getByRole("checkbox",{name:"全选已加载收藏夹"}));
+  fireEvent.click(screen.getByRole("button",{name:"下载所选收藏夹"}));
+  await screen.findByText("学习：暂时失败");
+  expect(enqueue.mock.calls).toEqual([["folder","11","旅行"],["folder","22","学习"]]);
+  expect(library).toHaveBeenCalledTimes(1);
+  expect((screen.getByRole("checkbox",{name:"选择收藏夹 旅行"}) as HTMLInputElement).checked).toBe(false);
+  expect((screen.getByRole("checkbox",{name:"选择收藏夹 学习"}) as HTMLInputElement).checked).toBe(true);
+  expect(close).not.toHaveBeenCalled();
+  enqueue.mockResolvedValue();
+  fireEvent.click(screen.getByRole("button",{name:"下载所选收藏夹"}));
+  await waitFor(()=>expect(close).toHaveBeenCalledTimes(1));
+});
+it("creates a background task and closes without fetching the author pages in the dialog", async () => {
+  const library=vi.spyOn(api,"douyinLibrary");
+  const enqueue=vi.spyOn(api,"enqueueDouyinBatch").mockResolvedValue();
+  const close=vi.fn();const refresh=vi.fn().mockResolvedValue(undefined);
+  render(<DouyinLibrary initialKind="author" onAdded={refresh} onQueued={close}/>);
+  fireEvent.change(screen.getByRole("textbox",{name:"博主主页链接"}),{target:{value:"https://www.douyin.com/user/MS4w-author"}});
+  fireEvent.click(screen.getByRole("button",{name:"下载博主全部作品"}));
+  await waitFor(()=>expect(close).toHaveBeenCalledTimes(1));
+  expect(enqueue).toHaveBeenCalledWith("author","https://www.douyin.com/user/MS4w-author",undefined);
+  expect(library).not.toHaveBeenCalled();expect(refresh).toHaveBeenCalledTimes(1);
+});
+it("keeps the dialog open when creating the background task fails", async () => {
+  vi.spyOn(api,"enqueueDouyinBatch").mockRejectedValue("请先设置下载文件夹");
+  const close=vi.fn();
+  render(<DouyinLibrary initialKind="author" onAdded={async()=>{}} onQueued={close}/>);
+  fireEvent.change(screen.getByRole("textbox",{name:"博主主页链接"}),{target:{value:"https://www.douyin.com/user/MS4w-author"}});
+  fireEvent.click(screen.getByRole("button",{name:"下载博主全部作品"}));
+  await screen.findByText("请先设置下载文件夹");expect(close).not.toHaveBeenCalled();
+});it("keeps the empty folder state simple and offers saved works in the source menu", async () => {
+  const library = vi.spyOn(api,"douyinLibrary").mockResolvedValueOnce({items:[],cursor:"0",hasMore:false}).mockResolvedValueOnce({items:[item],cursor:"0",hasMore:false});
+  render(<DouyinLibrary initialKind="folders" onAdded={async()=>{}}/>);
+  await screen.findByText("暂无收藏夹");
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByRole("button",{name:"查看全部收藏"})).toBeNull();
+  fireEvent.click(screen.getByRole("combobox"));
+  fireEvent.click(screen.getByRole("option",{name:"全部收藏"}));
+  await screen.findByText("作品一");
+  expect(library).toHaveBeenLastCalledWith("favorites","0",undefined);
+});
+it("shows skeleton rows immediately and retains loaded works during refresh", async () => {
+  let finish!: (value: {items: typeof item[]; cursor:string;hasMore:boolean}) => void;
+  const library=vi.spyOn(api,"douyinLibrary").mockImplementation(()=>new Promise(resolve=>{finish=resolve;}));
+  const {container}=render(<DouyinLibrary onAdded={async()=>{}}/>);
+  expect(screen.getByRole("status",{name:"正在加载作品"})).toBeTruthy();
+  expect(container.querySelectorAll(".library-skeleton-row")).toHaveLength(6);
+  finish({items:[item],cursor:"20",hasMore:true});
+  await screen.findByText("作品一");
+  expect(container.querySelectorAll(".douyin-work-row")).toHaveLength(1);
+  expect(container.querySelector(".douyin-media-grid")).toBeNull();
+  fireEvent.click(screen.getByRole("checkbox",{name:"选择 作品一"}));
+  fireEvent.click(screen.getByRole("button",{name:"刷新作品"}));
+  expect(screen.getByText("作品一")).toBeTruthy();
+  expect(screen.getByText("正在更新…")).toBeTruthy();
+  finish({items:[item],cursor:"20",hasMore:true});
+  await waitFor(()=>expect(screen.queryByText("正在更新…")).toBeNull());
+  expect((screen.getByRole("checkbox",{name:"选择 作品一"}) as HTMLInputElement).checked).toBe(true);
+  expect(library).toHaveBeenCalledTimes(2);
+});
+it("keeps loaded works downloadable and stops a repeated pagination cursor", async () => {
+  const library = vi.spyOn(api,"douyinLibrary").mockResolvedValueOnce({items:[item],cursor:"20",hasMore:true}).mockResolvedValueOnce({items:[item],cursor:"20",hasMore:true});
+  const enqueue = vi.spyOn(api,"enqueue").mockResolvedValue();
+  render(<DouyinLibrary onAdded={async()=>{}}/>);
+  await screen.findByText("作品一");
+  fireEvent.click(screen.getByRole("checkbox",{name:"选择 作品一"}));
+  fireEvent.click(screen.getByRole("button",{name:"加载更多"}));
+  await screen.findByRole("alert");
+  expect(screen.queryByRole("button",{name:"加载更多"})).toBeNull();
+  expect(screen.getAllByText("作品一")).toHaveLength(1);
+  expect(library).toHaveBeenLastCalledWith("likes","20",undefined);
+  fireEvent.click(screen.getByRole("button",{name:"下载所选"}));
+  await waitFor(()=>expect(enqueue).toHaveBeenCalledWith(item.url));
+});
+it("loads pages without duplicates and queues selected works", async () => {
+  vi.spyOn(api, "douyinLibrary").mockResolvedValueOnce({items:[item], cursor:"20", hasMore:true}).mockResolvedValueOnce({items:[item,{...item,id:"124", title:"作品二",url:"https://www.douyin.com/video/124"}],cursor:"40",hasMore:false});
+  const enqueue=vi.spyOn(api,"enqueue").mockResolvedValue();
+  render(<DouyinLibrary onAdded={async()=>{}}/>);
+  await screen.findByText("作品一");
+  fireEvent.click(screen.getByRole("button",{name:"加载更多"}));
+  await screen.findByText("作品二");
+  expect(screen.getAllByText("作品一")).toHaveLength(1);
+  fireEvent.click(screen.getByRole("checkbox",{name:"全选已加载作品"}));
+  fireEvent.click(screen.getByRole("button",{name:"下载所选"}));
+  await waitFor(()=>expect(enqueue).toHaveBeenCalledTimes(2));
+  expect(await screen.findByRole("status")).toHaveProperty("textContent","已加入 2 项");
+});
+it("shows login errors instead of pretending a list is empty", async () => {
+  vi.spyOn(api,"douyinLibrary").mockRejectedValue("请先登录抖音");
+  render(<DouyinLibrary onAdded={async()=>{}}/>);
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent","请先登录抖音");
+  expect(screen.queryByText("暂无作品")).toBeNull();
+});
+
+it("opens a collection folder and keeps failed queue selections for retry", async () => {
+  const library=vi.spyOn(api,"douyinLibrary").mockResolvedValueOnce({items:[],cursor:"0",hasMore:false});
+  render(<DouyinLibrary onAdded={async()=>{}}/>);
+  await screen.findByText("暂无作品");
+  library.mockResolvedValueOnce({items:[{...item,id:"789",title:"旅行收藏夹",url:""}],cursor:"0",hasMore:false});
+  fireEvent.click(screen.getByRole("combobox"));
+  fireEvent.click(screen.getByRole("option",{name:"我的收藏夹"}));
+  const folderButton = await screen.findByRole("button",{name:"查看收藏夹 旅行收藏夹"});
+  library.mockResolvedValue({items:[item],cursor:"0",hasMore:false});
+  fireEvent.click(folderButton);
+  await waitFor(()=>expect(library).toHaveBeenLastCalledWith("folder","0","789"));
+  await screen.findByText("作品一");
+  const enqueue=vi.spyOn(api,"enqueue").mockRejectedValue("网络错误");
+  fireEvent.click(screen.getByRole("checkbox",{name:"选择 作品一"}));
+  fireEvent.click(screen.getByRole("button",{name:"下载所选"}));
+  expect(await screen.findByRole("alert")).toHaveProperty("textContent","作品一：网络错误");
+  expect((screen.getByRole("checkbox",{name:"选择 作品一"}) as HTMLInputElement).checked).toBe(true);
+  enqueue.mockResolvedValue();
+  fireEvent.click(screen.getByRole("button",{name:"下载所选"}));
+  await waitFor(()=>expect(screen.getByRole("status").textContent).toBe("已加入 1 项"));
+});

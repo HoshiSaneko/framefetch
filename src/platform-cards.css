@@ -1,0 +1,115 @@
+/* Material 3: quiet surfaces, clear status, and a consistent action area. */
+.platform-directory {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1120px;
+}
+
+.platform-directory .platform-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 184px;
+  min-width: 0;
+  padding: 24px 24px 16px;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 45%, transparent);
+  border-radius: 24px;
+  background: var(--md-sys-color-surface);
+  box-shadow: none;
+}
+
+.platform-directory .platform-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+}
+
+.platform-card-identity { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.platform-directory .platform-avatar { width: 48px; height: 48px; border-radius: 16px; }
+.platform-directory .platform-avatar.bilibili { background: #e4f3fa; }
+.platform-directory .platform-card h2 {
+  align-self: auto;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+  letter-spacing: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.platform-connection-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+}
+.platform-connection-state i { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: var(--md-sys-color-outline); }
+.platform-connection-state[data-connected="true"] { color: #256b4e; background: #e6f2e9; }
+.platform-connection-state[data-connected="true"] i { background: #31845f; }
+
+.platform-directory .platform-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  margin-top: auto;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--md-sys-color-surface-container-low);
+}
+.platform-directory .connected-name { gap: 10px; color: var(--md-sys-color-on-surface-variant); }
+.platform-directory .platform-card-bottom .text-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.platform-directory .platform-card-bottom .text-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+.platform-directory .platform-card-bottom:has(> .button) { padding: 8px 0; background: transparent; }
+.platform-directory .platform-card-bottom > .button {
+  width: auto;
+  min-width: 136px;
+  min-height: 44px;
+  margin-left: auto;
+  padding-inline: 20px;
+  border-radius: 22px;
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.platform-directory .platform-card-bottom > .button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--md-sys-color-on-secondary-container) 8%, var(--md-sys-color-secondary-container));
+}
+.platform-directory .platform-card > .inline-error { padding: 12px; border-radius: 12px; }
+
+@media (max-width: 760px) {
+  .platform-directory { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+@media (max-width: 420px) {
+  .platform-directory .platform-card { padding: 20px 16px 12px; }
+  .platform-card-identity { gap: 12px; }
+  .platform-directory .platform-card-top { gap: 8px; }
+  .platform-directory .platform-card h2 { font-size: 18px; }
+}
+@media (forced-colors: active) {
+  .platform-directory .platform-card { border-color: CanvasText; }
+  .platform-connection-state i { background: CanvasText; }
+  .platform-directory .platform-card-bottom > button { border: 1px solid ButtonText; }
+}

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">FrameFetch · 拾帧 — 把喜欢的片段，留在本地。</title>
+  <desc id="desc">暖白与蓝色的媒体下载工具标题，右侧用应用原有叠帧标志和视频、图片、音频符号表示本地媒体收藏。</desc>
+  <rect width="1200" height="420" rx="28" fill="#F6F5F1"/>
+  <g font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif">
+    <g id="identity">
+      <rect x="52" y="48" width="8" height="22" rx="4" fill="#285FA7"/>
+      <text x="76" y="66" font-size="20" font-weight="600" letter-spacing="2" fill="#536575">DESKTOP MEDIA COLLECTION</text>
+      <text x="50" y="167" font-size="88" font-weight="650" letter-spacing="-4" fill="#172F4C">FrameFetch</text>
+      <text x="55" y="227" font-size="40" font-weight="600" fill="#285FA7">拾帧</text>
+      <text x="55" y="286" font-size="32" fill="#32495F">把喜欢的片段，留在本地。</text>
+    </g>
+    <g id="media-frames">
+      <rect x="828" y="54" width="230" height="213" rx="38" fill="none" stroke="#BED0E6" stroke-width="3"/>
+      <rect x="787" y="98" width="230" height="213" rx="38" fill="#E4EBF4"/>
+      <rect x="885" y="144" width="230" height="213" rx="38" fill="#285FA7"/>
+      <path d="M971 198 Q971 191 978 195 L1036 231 Q1043 235 1036 239 L978 275 Q971 280 971 272Z" fill="#FDFCF9"/>
+      <text x="928" y="321" font-size="20" font-weight="600" letter-spacing="3" fill="#DCE7F4">LOCAL MEDIA</text>
+      <g fill="none" stroke="#285FA7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="813" y="126" width="42" height="32" rx="5"/>
+        <path d="m816 151 12-12 8 8 5-5 11 11"/><circle cx="843" cy="135" r="3" fill="#285FA7" stroke="none"/>
+        <path d="M1083 70v-18l24-5v19m-24-7 24-5"/><ellipse cx="1077" cy="72" rx="7" ry="5"/><ellipse cx="1101" cy="68" rx="7" ry="5"/>
+      </g>
+    </g>
+    <path d="M55 335H710" stroke="#D8DFE4"/>
+    <text x="55" y="377" font-size="21" fill="#536575">Telegram</text>
+    <circle cx="173" cy="370" r="2" fill="#93A5B4"/>
+    <text x="193" y="377" font-size="21" fill="#536575">哔哩哔哩</text>
+    <circle cx="299" cy="370" r="2" fill="#93A5B4"/>
+    <text x="319" y="377" font-size="21" fill="#536575">抖音</text>
+    <circle cx="383" cy="370" r="2" fill="#93A5B4"/>
+    <text x="403" y="377" font-size="21" fill="#536575">小红书</text>
+  </g>
+</svg>

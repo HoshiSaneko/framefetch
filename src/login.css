@@ -1,0 +1,150 @@
+.qr-login {
+  margin-top: 20px;
+}
+.modal:has(.qr-login) .modal-symbol {
+  display: none;
+}
+.modal:has(.qr-login) h2,
+.modal:has(.qr-login) .modal-subtitle {
+  text-align: center;
+}
+.qr-error {
+  max-width: 175px;
+  margin: 0;
+  color: #a06450;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.qr-frame {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+  border: 1px solid #e5ece7;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.qr-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: qr-appear 250ms cubic-bezier(0, 0, 0, 1);
+}
+.qr-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  color: #779084;
+  font-size: 12px;
+}
+.qr-live {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: #375d47;
+  font-size: 12px;
+}
+.qr-live > i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #10864b;
+}
+.qr-live > span {
+  color: #78857d;
+  font-size: 11px;
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.qr-instructions {
+  list-style: none;
+  padding: 14px 16px;
+  margin: 6px 0 16px;
+  display: grid;
+  gap: 11px;
+  border-radius: 10px;
+  background: #f6f9f7;
+  color: #44564c;
+  font-size: 12px;
+}
+.qr-instructions li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.qr-instructions li > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #e4eee7;
+  color: #258250;
+  font-size: 11px;
+}
+.qr-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+}
+.qr-config-note {
+  padding: 12px;
+  margin: 18px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #eef6f0;
+  color: #36714b;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.qr-back {
+  display: block;
+  margin: 14px auto 0;
+  border: 0;
+  background: none;
+  color: #387853;
+  cursor: pointer;
+  font-size: 12px;
+}
+@keyframes qr-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-height: 740px) {
+  .modal:has(.qr-login) {
+    padding: 24px 30px;
+  }
+  .qr-frame {
+    width: 200px;
+    height: 200px;
+  }
+  .qr-login {
+    margin-top: 12px;
+  }
+  .qr-instructions {
+    gap: 8px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qr-frame img {
+    animation: none;
+  }
+}
