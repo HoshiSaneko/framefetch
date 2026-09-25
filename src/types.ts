@@ -41,6 +41,7 @@ export interface Snapshot {
   tasks: DownloadTask[];
 }
 export interface MediaPreview {
+  topics?: string[];
   url: string;
   title: string;
   fileName: string;

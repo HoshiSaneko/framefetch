@@ -100,6 +100,7 @@ pub struct Snapshot {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaPreview {
+    pub topics: Vec<String>,
     pub url: String,
     pub title: String,
     pub file_name: String,

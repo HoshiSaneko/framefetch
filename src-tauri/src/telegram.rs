@@ -207,6 +207,7 @@ pub async fn resolve(client: &Client, input: &str) -> Result<Resolved, String> {
     let thumbnail = thumbnail(client, &media).await;
     Ok(Resolved {
         preview: MediaPreview {
+            topics: message_topics(message.text(), message.fmt_entities().map(Vec::as_slice).unwrap_or(&[])),
             url: link.canonical,
             title,
             file_name,
@@ -218,6 +219,52 @@ pub async fn resolve(client: &Client, input: &str) -> Result<Resolved, String> {
         media,
         media_id,
     })
+}
+
+fn message_topics(text: &str, entities: &[grammers_tl_types::enums::MessageEntity]) -> Vec<String> {
+    // Telegram entity offsets and lengths count UTF-16 code units, not UTF-8 bytes.
+    let utf16: Vec<u16> = text.encode_utf16().collect();
+    let mut topics = Vec::new();
+    for entity in entities {
+        let grammers_tl_types::enums::MessageEntity::Hashtag(tag) = entity else { continue };
+        let (Ok(start), Ok(length)) = (usize::try_from(tag.offset), usize::try_from(tag.length)) else { continue };
+        let Some(end) = start.checked_add(length) else { continue };
+        let Some(units) = utf16.get(start..end) else { continue };
+        let Ok(value) = String::from_utf16(units) else { continue };
+        let Some(topic) = value.strip_prefix('#').filter(|topic| !topic.is_empty()) else { continue };
+        if !topics.iter().any(|existing| existing == topic) {
+            topics.push(topic.to_string());
+        }
+    }
+    topics
+}
+
+#[cfg(test)]
+mod topic_tests {
+    use super::message_topics;
+    use grammers_tl_types::{enums::MessageEntity, types::MessageEntityHashtag};
+
+    fn hashtag(offset: i32, length: i32) -> MessageEntity {
+        MessageEntity::Hashtag(MessageEntityHashtag { offset, length })
+    }
+
+    #[test]
+    fn extracts_full_caption_with_utf16_offsets_and_deduplicates() {
+        let text = format!("🎬{}\n#旅行 #video_2026 #旅行", "正文".repeat(100));
+        let offset = text[..text.find('#').unwrap()].encode_utf16().count() as i32;
+        assert_eq!(message_topics(&text, &[
+            hashtag(offset, 3), hashtag(offset + 4, 11), hashtag(offset + 16, 3),
+        ]), vec!["旅行", "video_2026"]);
+    }
+
+    #[test]
+    fn ignores_unmarked_text_and_invalid_entities() {
+        assert!(message_topics("https://example.com/#anchor #plain", &[]).is_empty());
+        assert!(message_topics("🎬 #", &[
+            hashtag(-1, 2), hashtag(0, 1), hashtag(3, 1),
+            hashtag(0, -1), hashtag(100, 3),
+        ]).is_empty());
+    }
 }
 
 fn document_info(

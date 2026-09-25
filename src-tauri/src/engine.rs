@@ -45,9 +45,11 @@ impl Engine {
                 tasks: vec![],
             }
         };
-        // Recompute the default when the executable moves; existing tasks keep
-        // their own output paths so that playback and resume still work.
-        disk.settings.download_dir = download_dir.to_string_lossy().into_owned();
+        // Preserve the saved root across restarts; only unset or invalid paths
+        // fall back to the application's default. Existing task paths stay intact.
+        if !Path::new(&disk.settings.download_dir).is_absolute() {
+            disk.settings.download_dir = download_dir.to_string_lossy().into_owned();
+        }
         if disk.settings.api_id.trim().is_empty() || disk.settings.api_hash.trim().is_empty() {
             let app_config: serde_json::Value =
                 serde_json::from_str(include_str!("../telegram-app.json"))
@@ -451,6 +453,7 @@ mod tests {
             created_at: 1, updated_at: 1, error: None, source: "Telegram".into(), media_id: 0,
         };
         let mut preview = MediaPreview {
+            topics: vec!["旅行".into(), "摄影".into()],
             url: job.url.clone(), title: "Video".into(), file_name: "video.mp4".into(),
             thumbnail: Some("data:image/jpeg;base64,test".into()), size: 2_000_000,
             source: "Channel".into(), kind: "video".into(),
@@ -460,6 +463,7 @@ mod tests {
         assert_eq!(resolved.media_id, 42);
         assert_eq!(resolved.total_bytes, preview.size);
         assert_eq!(resolved.thumbnail, preview.thumbnail);
+        assert_eq!(resolved.topics, preview.topics);
         assert!(resolved.output_path.ends_with("12345678-video.mp4"));
         assert_eq!(part_path(&resolved), part_path(&job));
         resolved.downloaded_bytes = 524_288;
@@ -474,6 +478,7 @@ mod tests {
         assert!(new_resolved.output_path.ends_with("视频.mp4"));
         assert!(Path::new(&new_resolved.output_path).starts_with(std::env::temp_dir().join("Telegram")));
         let restored: DownloadTask = serde_json::from_slice(&serde_json::to_vec(&new_resolved).unwrap()).unwrap();
+        assert_eq!(restored.topics, preview.topics);
         preview.title = "标题改变".into();
         assert_eq!(prepare_task(&restored, &preview, 42).unwrap().output_path, new_resolved.output_path);
     }
@@ -528,7 +533,7 @@ mod tests {
         let downloads = root.join("portable-tool").join("downloads");
         let engine = Engine::load(root.clone(), downloads.clone()).unwrap();
         let data = engine.data.lock().await;
-        assert_eq!(Path::new(&data.settings.download_dir), downloads);
+        assert_eq!(data.settings.download_dir, disk.settings.download_dir);
         assert_eq!(data.tasks[0].output_path, disk.tasks[0].output_path);
         let saved: DiskData = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
         assert_eq!(saved.settings.download_dir, data.settings.download_dir);
@@ -538,6 +543,13 @@ mod tests {
         assert!(!data.account.connected);
         assert_eq!(data.tasks[1].status, Status::Paused);
         assert_eq!(data.tasks[1].media_id, 0);
+        drop(data);
+        let restarted = Engine::load(root.clone(), downloads.clone()).unwrap();
+        assert_eq!(restarted.data.lock().await.settings.download_dir, disk.settings.download_dir);
+        disk.settings.download_dir = String::new();
+        atomic_write(&path, &serde_json::to_vec(&disk).unwrap()).unwrap();
+        let fallback = Engine::load(root, downloads.clone()).unwrap();
+        assert_eq!(Path::new(&fallback.data.lock().await.settings.download_dir), downloads);
     }
 }
 
@@ -549,6 +561,7 @@ mod tests {
 fn prepare_task(job: &DownloadTask, preview: &MediaPreview, media_id: i64) -> Result<DownloadTask, String> {
     let mut task = job.clone();
     task.status = Status::Downloading;
+    task.topics = preview.topics.clone();
     if job.media_id == 0 {
         let parent = Path::new(&job.output_path).parent().ok_or("保存路径无效")?;
         task.output_path = parent.join(output_name(&job.id, &preview.file_name)).to_string_lossy().into_owned();

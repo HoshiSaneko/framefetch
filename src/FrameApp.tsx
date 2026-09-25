@@ -1,5 +1,6 @@
 import { Notice, type NoticeKind } from "./Notice";
 import { AboutModal } from "./AboutModal";
+import { DownloadDirectoryModal } from "./DownloadDirectoryModal";
 import { XiaohongshuCard } from "./XiaohongshuCard";
 import { XiaohongshuDownload } from "./XiaohongshuDownload";
 import { TelegramBatch } from "./TelegramBatch";
@@ -169,6 +170,7 @@ export default function FrameApp() {
   const [newOpen, setNewOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
   const [notices, setNotices] = useState<{id: number; message: string; kind: NoticeKind}[]>([]);
   const noticeId = useRef(0);
   const setNotice = useCallback((message: string, kind: NoticeKind = "error") => {
@@ -336,6 +338,7 @@ export default function FrameApp() {
         <h1 className="workspace-title">拾帧</h1>
         <nav className="workspace-actions" aria-label="主导航">
           {page === "platforms" && <button className="header-action" onClick={() => changePage("downloads")}><ArrowLeft size={17} /><span>返回下载</span></button>}
+          <button className="header-action" title={data.settings.downloadDir || "设置默认下载根目录"} onClick={() => setDirectoryOpen(true)}>下载目录设置</button>
           <button className="header-action" title="打开下载文件夹" onClick={() => void run(api.openFolder)}><FolderOpen size={18} /><span>下载文件夹</span></button>
           <button className="header-action" aria-current={page === "platforms" ? "page" : undefined} onClick={() => changePage("platforms")}><Unplug size={18} /><span>平台连接</span></button>
           <button className="header-action header-icon" aria-label="说明" title="说明" onClick={() => setHelpOpen(true)}><CircleHelp size={19} /></button>
@@ -605,6 +608,7 @@ export default function FrameApp() {
           }}
         />
       )}
+      {directoryOpen && <DownloadDirectoryModal directory={data.settings.downloadDir} onClose={() => setDirectoryOpen(false)} onSaved={async () => { await refresh(); setNotice("默认下载根目录已保存。", "success"); }} />}
       {loginOpen && (
         <LoginModal
           settings={data.settings}

@@ -15,6 +15,15 @@ it("displays Douyin topics from saved metadata and older hashtag titles", () => 
   ["旅行", "摄影", "风景"].forEach(topic => expect(within(dialog).getByText(`#${topic}`)).toBeTruthy());
 });
 
+it("displays Telegram topics saved from the full message independently of its title", () => {
+  const task = {...designFixture().tasks[0], platform:"telegram" as const, title:"资源标题", topics:["旅行", "video_2026"]};
+  render(<TaskRow task={task} selected={false} busy={false} onSelect={vi.fn()} onAction={vi.fn()}/>);
+  expect(screen.getByText("资源标题")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", {name:"查看全部 2 个话题"}));
+  const dialog = screen.getByRole("dialog");
+  ["旅行", "video_2026"].forEach(topic => expect(within(dialog).getByText(`#${topic}`)).toBeTruthy());
+});
+
 it("recalculates overflow when space changes and opens every full topic", () => {
   let width = 240;
   let resized = () => {};
