@@ -34,3 +34,16 @@ it("restores a saved session and clears it when disconnected", async () => {
 });
 
 
+
+it("shows the status error detail and clears it after a successful QR login", async () => {
+  vi.mocked(api.douyinStatus).mockRejectedValue("无法打开抖音登录窗口：测试错误");
+  vi.mocked(api.douyinQrStart).mockResolvedValue("recovery");
+  vi.mocked(api.douyinQrCancel).mockResolvedValue();
+  vi.mocked(api.douyinQrPoll).mockResolvedValue({loggedIn: true, image: null});
+  vi.mocked(api.douyinProfile).mockResolvedValue({name: "测试账号", avatar: null});
+  render(<DouyinCard/>);
+  expect((await screen.findByRole("alert")).textContent).toContain("无法打开抖音登录窗口：测试错误");
+  fireEvent.click(screen.getByRole("button", {name: "扫码登录"}));
+  await screen.findByRole("button", {name: "断开连接"});
+  expect(screen.queryByRole("alert")).toBeNull();
+});

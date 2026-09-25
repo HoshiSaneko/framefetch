@@ -15,3 +15,13 @@ Keep this entire directory next to FrameFetch.exe in portable distributions.
    License and configuration: FFmpeg-LICENSE.txt, FFmpeg-README.txt.
 
 Executables are ignored by Git and must be supplied before packaging.
+
+macOS
+-----
+Run bash scripts/prepare-macos.sh from the repository root.
+yt-dlp: upstream universal macOS executable, verified against release SHA2-256SUMS.
+FFmpeg/FFprobe: OSXExperts static builds (Apple Silicon 9.0 / Intel 8.0).
+Provider/source/build details: https://www.osxexperts.net/
+The existing FFmpeg-README.txt describes the Windows build only.
+macOS resources are embedded in FrameFetch.app/Contents/Resources/bin.
+Retain upstream license notices and matching source/build information when distributing.

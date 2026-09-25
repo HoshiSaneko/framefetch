@@ -1,3 +1,4 @@
+use crate::media_tools::tool;
 use crate::{
     engine::{output_name, Engine, Shared},
     models::{now, DownloadTask, Status},
@@ -11,7 +12,7 @@ use std::{
     sync::atomic::{AtomicU8, Ordering},
     time::Duration,
 };
-use tauri::{AppHandle, Manager, WebviewWindow};
+use tauri::{AppHandle, WebviewWindow};
 use tokio::{
     io::{AsyncBufReadExt, BufReader},
     process::Command,
@@ -532,7 +533,7 @@ pub async fn enqueue_xiaohongshu(
     state.0.persist(&app).await
 }
 fn command(app: &AppHandle) -> Result<Command, String> {
-    let mut c = Command::new(tool(app, "yt-dlp.exe")?);
+    let mut c = Command::new(tool(app, "yt-dlp")?);
     c.args([
         "--ignore-config",
         "--encoding",
@@ -547,30 +548,13 @@ fn command(app: &AppHandle) -> Result<Command, String> {
     ])
     .stdin(Stdio::null())
     .kill_on_drop(true);
+    #[cfg(unix)]
+    c.process_group(0);
     #[cfg(windows)]
     c.creation_flags(0x08000000);
     Ok(c)
 }
-fn tool(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
-    let mut roots = vec![app
-        .path()
-        .resource_dir()
-        .map_err(|e| e.to_string())?
-        .join("bin")];
-    if cfg!(debug_assertions) {
-        roots.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bin"));
-    }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(p) = exe.parent() {
-            roots.push(p.join("bin"));
-        }
-    }
-    roots
-        .into_iter()
-        .map(|p| p.join(name))
-        .find(|p| p.is_file())
-        .ok_or_else(|| format!("缺少下载组件 {name}，请重新安装完整版本"))
-}
+
 fn friendly_error(raw: &str) -> String {
     let s = raw.to_lowercase();
     if s.contains("requested format") {
@@ -636,6 +620,13 @@ async fn stop(child: &mut tokio::process::Child) {
             .stdout(Stdio::null())
             .stderr(Stdio::null());
         let _ = c.status().await;
+    }
+    #[cfg(unix)]
+    if let Some(id) = child.id() {
+        // Stop ffmpeg descendants together with their yt-dlp parent.
+        let _ = Command::new("/bin/kill")
+            .args(["-KILL", "--", &format!("-{id}")])
+            .stdout(Stdio::null()).stderr(Stdio::null()).status().await;
     }
     let _ = child.kill().await;
     let _ = child.wait().await;
@@ -705,7 +696,7 @@ pub async fn transfer(
         serde_json::to_vec(&p.info).map_err(|e| e.to_string())?,
     )
     .map_err(|e| e.to_string())?;
-    let ffmpeg = tool(app, "ffmpeg.exe")?;
+    let ffmpeg = tool(app, "ffmpeg")?;
     let mut cmd = command(app)?;
     cmd.arg("--load-info-json").arg(&info_path);
     cmd.arg("--ffmpeg-location")

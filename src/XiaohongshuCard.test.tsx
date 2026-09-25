@@ -28,3 +28,15 @@ it("restores a connection and reports logout failure without losing the account"
  await screen.findByText("请先暂停下载");expect(screen.getByText("示例账号")).toBeTruthy();
  fireEvent.click(screen.getByRole("button",{name:"断开连接"}));await screen.findByRole("button",{name:"扫码登录"});
 });
+
+it("shows status errors outside the card and lets the user dismiss them",async()=>{
+ vi.mocked(api.xiaohongshuStatus).mockRejectedValue("登录页面尚未准备好，请稍后重试");
+ const {container}=render(<XiaohongshuCard/>);
+ const notice=await screen.findByRole("alert");
+ expect(notice.textContent).toContain("登录页面尚未准备好，请稍后重试");
+ expect(container.contains(notice)).toBe(false);
+ expect(container.querySelector(".inline-error")).toBeNull();
+ fireEvent.click(screen.getByRole("button",{name:"关闭小红书提示"}));
+ expect(screen.queryByRole("alert")).toBeNull();
+ expect(screen.getByRole("button",{name:"扫码登录"})).toBeTruthy();
+});

@@ -1,9 +1,14 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NewDownload } from "./FrameApp";
 import { api } from "./bridge";
 import { previewPlatforms } from "./platforms";
+
+beforeEach(() => {
+  vi.spyOn(api, "bilibiliStatus").mockResolvedValue({sessionPresent: false});
+  vi.spyOn(api, "xiaohongshuStatus").mockResolvedValue({sessionPresent: false, name: null, avatar: null});
+});
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -113,11 +118,12 @@ it("queues Bilibili from Link Download without parsing or showing choices", asyn
 });
 
 it("offers a standalone Bilibili tab and keeps its link separate", async () => {
+  vi.mocked(api.bilibiliStatus).mockResolvedValue({sessionPresent: true});
   vi.spyOn(api,"douyinStatus").mockResolvedValue({sessionPresent:false});
   const preview=vi.spyOn(api,"bilibiliPreview").mockResolvedValue({url:"https://www.bilibili.com/video/BV1xx411c7mD?p=1",title:"Bilibili 示例",thumbnail:null,formats:[{id:"80+30280",label:"1080P 高清"}],hasAudio:true});
   render(<NewDownload platforms={previewPlatforms} connected={false} onClose={vi.fn()} onLogin={vi.fn()} onAdded={async()=>{}}/>);
   fireEvent.change(screen.getByRole("textbox",{name:"媒体链接"}),{target:{value:"https://t.me/demo/123"}});
-  fireEvent.click(screen.getByRole("button",{name:"Bilibili"}));
+  fireEvent.click(await screen.findByRole("button",{name:"Bilibili"}));
   expect(screen.queryByRole("textbox",{name:"媒体链接"})).toBeNull();
   fireEvent.change(screen.getByRole("textbox",{name:"Bilibili 视频链接"}),{target:{value:"https://www.bilibili.com/video/BV1xx411c7mD"}});
   await screen.findByRole("group",{name:"下载内容"});expect(preview).toHaveBeenCalledOnce();
@@ -125,19 +131,38 @@ it("offers a standalone Bilibili tab and keeps its link separate", async () => {
   fireEvent.click(screen.getByRole("button",{name:"链接下载"}));
   expect((screen.getByRole("textbox",{name:"媒体链接"}) as HTMLInputElement).value).toBe("https://t.me/demo/123");
   expect(screen.queryByRole("group",{name:"下载内容"})).toBeNull();
-  fireEvent.click(screen.getByRole("button",{name:"Bilibili"}));
+  fireEvent.click(await screen.findByRole("button",{name:"Bilibili"}));
   expect((screen.getByRole("textbox",{name:"Bilibili 视频链接"}) as HTMLInputElement).value).toBe("https://www.bilibili.com/video/BV1xx411c7mD");
 });
 
 
 it("keeps Xiaohongshu default link downloads separate from the preview tab",async()=>{
+ vi.mocked(api.xiaohongshuStatus).mockResolvedValue({sessionPresent: true, name: null, avatar: null});
  vi.spyOn(api,"douyinStatus").mockResolvedValue({sessionPresent:false});
  const enqueue=vi.spyOn(api,"enqueue").mockResolvedValue();const preview=vi.spyOn(api,"xiaohongshuPreview");
  render(<NewDownload platforms={previewPlatforms} connected={false} onClose={vi.fn()} onLogin={vi.fn()} onAdded={async()=>{}}/>);
  fireEvent.change(screen.getByRole("textbox",{name:"媒体链接"}),{target:{value:"分享 http://xhslink.com/a/abc 复制打开"}});
- fireEvent.click(screen.getByRole("button",{name:"小红书"}));
+ fireEvent.click(await screen.findByRole("button",{name:"小红书"}));
  expect((screen.getByRole("textbox",{name:"小红书作品链接"}) as HTMLInputElement).value).toBe("");
  fireEvent.click(screen.getByRole("button",{name:"链接下载"}));
  fireEvent.click(screen.getByRole("button",{name:"加入下载"}));
  await waitFor(()=>expect(enqueue).toHaveBeenCalledWith("http://xhslink.com/a/abc"));expect(preview).not.toHaveBeenCalled();
+});
+
+
+it("shows only platforms with confirmed sessions while another status check is pending or fails", async () => {
+  vi.spyOn(api, "douyinStatus").mockResolvedValue({sessionPresent: false});
+  let resolveBilibili!: (status: {sessionPresent: boolean}) => void;
+  vi.mocked(api.bilibiliStatus).mockImplementation(() => new Promise(resolve => {resolveBilibili = resolve;}));
+  vi.mocked(api.xiaohongshuStatus).mockRejectedValue(new Error("status unavailable"));
+  render(<NewDownload platforms={previewPlatforms} connected={false} onClose={vi.fn()} onLogin={vi.fn()} onAdded={async()=>{}}/>);
+  expect(screen.queryByRole("group", {name: "下载来源"})).toBeNull();
+  for (const name of ["Telegram", "抖音", "Bilibili", "小红书"]) {
+    expect(screen.queryByRole("button", {name})).toBeNull();
+  }
+  resolveBilibili({sessionPresent: true});
+  expect(await screen.findByRole("button", {name: "Bilibili"})).toBeTruthy();
+  for (const name of ["Telegram", "抖音", "小红书"]) {
+    expect(screen.queryByRole("button", {name})).toBeNull();
+  }
 });

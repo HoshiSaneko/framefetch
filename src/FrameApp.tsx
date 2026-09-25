@@ -1,3 +1,4 @@
+import { Notice, type NoticeKind } from "./Notice";
 import { AboutModal } from "./AboutModal";
 import { XiaohongshuCard } from "./XiaohongshuCard";
 import { XiaohongshuDownload } from "./XiaohongshuDownload";
@@ -35,7 +36,6 @@ import {
   Film,
   FolderOpen,
   Image,
-  Info,
   Link2,
   LoaderCircle,
   Music2,
@@ -169,7 +169,12 @@ export default function FrameApp() {
   const [newOpen, setNewOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notices, setNotices] = useState<{id: number; message: string; kind: NoticeKind}[]>([]);
+  const noticeId = useRef(0);
+  const setNotice = useCallback((message: string, kind: NoticeKind = "error") => {
+    const id = ++noticeId.current;
+    setNotices(previous => [...previous.filter(item => item.message !== message || item.kind !== kind), {id, message, kind}]);
+  }, []);
   const [restoring, setRestoring] = useState(desktop);
   const [busyTask, setBusyTask] = useState<string | null>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -231,11 +236,6 @@ export default function FrameApp() {
     };
   }, []);
   useEffect(() => {
-    if (!notice) return;
-    const timer = setTimeout(() => setNotice(""), 6500);
-    return () => clearTimeout(timer);
-  }, [notice]);
-  useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (
         (e.ctrlKey || e.metaKey) &&
@@ -261,7 +261,7 @@ export default function FrameApp() {
     try {
       await action();
       await refresh();
-      if (success) setNotice(success);
+      if (success) setNotice(success, "success");
     } catch (e) {
       setNotice(errorText(e));
     }
@@ -339,7 +339,7 @@ export default function FrameApp() {
           <button className="header-action" title="打开下载文件夹" onClick={() => void run(api.openFolder)}><FolderOpen size={18} /><span>下载文件夹</span></button>
           <button className="header-action" aria-current={page === "platforms" ? "page" : undefined} onClick={() => changePage("platforms")}><Unplug size={18} /><span>平台连接</span></button>
           <button className="header-action header-icon" aria-label="说明" title="说明" onClick={() => setHelpOpen(true)}><CircleHelp size={19} /></button>
-          <button className="button primary new-button" onClick={() => setNewOpen(true)}><Plus size={19} />新建下载<kbd>Ctrl+N</kbd></button>
+          <button className="button primary new-button" onClick={() => setNewOpen(true)}><Plus size={19} />新建下载<kbd>{/Mac/i.test(navigator.platform) ? "⌘N" : "Ctrl+N"}</kbd></button>
         </nav>
       </header>
       <div className="app-body">
@@ -519,15 +519,8 @@ export default function FrameApp() {
           <div className="status-metrics"><TransferActivity tasks={data.tasks} chartOnly /><span className="status-rate"><ArrowDown size={12} aria-hidden="true" /><span>{formatBytes(speed)}/s</span></span><span className="status-separator" aria-hidden="true" /><span className="status-rate status-queued"><Clock3 size={12} aria-hidden="true" /><span>{[downloading && `${downloading} 个下载中`, resolving && `${resolving} 个解析中`, queued && `${queued} 个排队中`].filter(Boolean).join(" · ") || (paused ? `${paused} 个已暂停` : failed ? `${failed} 个需处理` : "暂无进行中的任务")}</span></span><span className="status-separator" aria-hidden="true" /><span className="status-completed">{completed.length} 个已完成</span></div>
         </footer>
       </div>
-      <MotionPresence open={!!notice} className="toast-wrap">
-        <div className="app-toast" role="status">
-          <Info size={17} />
-          <span>{notice}</span>
-          <button aria-label="关闭提示" onClick={() => setNotice("")}>
-            <X size={16} />
-          </button>
-        </div>
-      </MotionPresence>
+      {notices.map(notice => <Notice key={notice.id} kind={notice.kind} message={notice.message}
+        onClose={() => setNotices(previous => previous.filter(item => item.id !== notice.id))}/>)}
       {removing.length > 0 && <Modal title={removing.length === 1 ? "移除这条记录？" : `移除 ${removing.length} 条记录？`} busy={removeBusy} onClose={() => setRemoving([])}>
         {removeError && <p className="inline-error" role="alert">{removeError}</p>}
         <div className="modal-actions">
@@ -608,7 +601,7 @@ export default function FrameApp() {
             await refresh();
             changePage("downloads");
             setSource("all");
-            setNotice("已加入下载队列。");
+            setNotice("已加入下载队列。", "success");
           }}
         />
       )}
@@ -619,7 +612,7 @@ export default function FrameApp() {
           onConnected={(account) => {
             setData((s) => ({ ...s, account }));
             void refresh();
-            setNotice("Telegram 已连接，可以开始下载了。");
+            setNotice("Telegram 已连接，可以开始下载了。", "success");
           }}
         />
       )}
@@ -746,13 +739,28 @@ export function NewDownload({
   const [bilibiliUrl, setBilibiliUrl] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [douyinConnected, setDouyinConnected] = useState(false);
+  const [sessions, setSessions] = useState({douyin: false, bilibili: false, xiaohongshu: false});
   const [mode, setMode] = useState("link");
   useEffect(() => {
     let alive = true;
-    void api.douyinStatus().then(status => {if (alive) setDouyinConnected(status.sessionPresent);}).catch(() => {});
+    const checks = [
+      ["douyin", api.douyinStatus],
+      ["bilibili", api.bilibiliStatus],
+      ["xiaohongshu", api.xiaohongshuStatus],
+    ] as const;
+    for (const [id, check] of checks) {
+      void check().then(status => {
+        if (alive) setSessions(previous => ({...previous, [id]: status.sessionPresent}));
+      }).catch(() => {});
+    }
     return () => {alive = false;};
   }, []);
+  const platformTabs = [
+    {id: "telegram", label: "Telegram", connected},
+    {id: "douyin", label: "抖音", connected: sessions.douyin},
+    {id: "bilibili", label: "Bilibili", connected: sessions.bilibili},
+    {id: "xiaohongshu", label: "小红书", connected: sessions.xiaohongshu},
+  ].filter(tab => tab.connected && platforms.some(p => p.id === tab.id && p.available));
   const currentUrl = mode === "xiaohongshu" ? xiaohongshuUrl : mode === "bilibili" ? bilibiliUrl : url;
   const platform = detectPlatform(currentUrl, platforms);
   const submit = async (event: FormEvent) => {
@@ -787,9 +795,9 @@ export function NewDownload({
       onClose={onClose}
       busy={busy}
     >
-      {(connected || douyinConnected || platforms.some(p => ["bilibili","xiaohongshu"].includes(p.id) && p.available)) && <div className="download-source-switch" role="group" aria-label="下载来源">
+      {platformTabs.length > 0 && <div className="download-source-switch" role="group" aria-label="下载来源">
         <div className="download-source-platforms">
-          {[...(connected ? [{id:"telegram",label:"Telegram"}] : []), ...(douyinConnected ? [{id:"douyin",label:"抖音"}] : []), ...(platforms.some(p => p.id === "bilibili" && p.available) ? [{id:"bilibili",label:"Bilibili"}] : []), ...(platforms.some(p => p.id === "xiaohongshu" && p.available) ? [{id:"xiaohongshu",label:"小红书"}] : [])].map(tab => <button key={tab.id} type="button" aria-pressed={mode === tab.id} disabled={busy} onClick={() => {setMode(tab.id);setError("");}}><PlatformIcon id={tab.id as PlatformId} size={16}/> {tab.label}</button>)}
+          {platformTabs.map(tab => <button key={tab.id} type="button" aria-pressed={mode === tab.id} disabled={busy} onClick={() => {setMode(tab.id);setError("");}}><PlatformIcon id={tab.id as PlatformId} size={16}/> {tab.label}</button>)}
         </div>
         <button className="download-source-link" type="button" aria-pressed={mode === "link"} disabled={busy} onClick={() => {setMode("link");setError("");}}><Link2 size={16}/> 链接下载</button>
       </div>}

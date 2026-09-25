@@ -1,8 +1,8 @@
 import type { PlatformId } from "./platforms";
-import telegramLogo from "../public-brand/telegram.svg";
-import douyinLogo from "../public-brand/douyin.svg";
-import bilibiliLogo from "../public-brand/bilibili.svg";
-import xiaohongshuLogo from "../public-brand/xiaohongshu.svg";
+const telegramLogo = "/telegram.svg";
+const douyinLogo = "/douyin.svg";
+const bilibiliLogo = "/bilibili.svg";
+const xiaohongshuLogo = "/xiaohongshu.svg";
 
 const platformLogos: Record<PlatformId, string> = {
   telegram: telegramLogo,

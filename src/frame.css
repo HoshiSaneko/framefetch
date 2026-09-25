@@ -1527,35 +1527,6 @@ h1 {
   line-height: 1.9;
   margin-top: 7px;
 }
-.toast-wrap {
-  position: fixed;
-  bottom: 47px;
-  left: calc(50% + 90px);
-  translate: -50% 0;
-  z-index: 150;
-  max-width: calc(100vw - 260px);
-}
-.app-toast {
-  padding: 13px 17px;
-  background: #2f3237;
-  color: #e9ebef;
-  box-shadow: 0 10px 30px #20262e22;
-  border: 1px solid #ffffff1a;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  border-radius: 10px;
-  font-size: 12px;
-  line-height: 1.6;
-}
-.app-toast button {
-  padding: 0;
-  color: #a8adb5;
-  margin-left: 6px;
-}
-.app-toast > span {
-  overflow-wrap: anywhere;
-}
 .qr-login {
   color: #51575f;
 }
@@ -2706,20 +2677,6 @@ h1 {
 }
 .help-steps p {
   color: #879db8;
-}
-.app-toast {
-  background: #354a66;
-  color: #f4f8ff;
-  border-color: #6884a633;
-  border-radius: 7px;
-  padding: 11px 15px;
-  font-size: 12px;
-}
-.app-toast button {
-  color: #a8bdd7;
-}
-.toast-wrap {
-  left: calc(50% + 89px);
 }
 .qr-live {
   background: #f5f9ff !important;

@@ -61,8 +61,7 @@ fn valid_avatar(value: &str) -> bool {
     })
 }
 pub(crate) fn cookie_header(window: &WebviewWindow) -> Result<String, String> {
-    Ok(window
-        .cookies_for_url(HOME.parse().unwrap())
+    Ok(crate::browser_cookies::for_url(window, HOME.parse().unwrap())
         .map_err(|_| "无法读取 Bilibili 会话")?
         .iter()
         .filter(|c| !c.name().contains(['\r', '\n', ';']) && !c.value().contains(['\r', '\n', ';']))
@@ -203,6 +202,8 @@ pub(crate) fn window(app: &AppHandle) -> Result<WebviewWindow, String> {
     .inner_size(1060.0, 760.0)
     .min_inner_size(800.0, 600.0)
     .data_directory(directory)
+        .background_throttling(tauri::utils::config::BackgroundThrottlingPolicy::Disabled)
+        .data_store_identifier(*b"framefetch-bili1")
     .visible(false)
     .on_navigation(allowed_navigation)
     .build()
@@ -213,8 +214,7 @@ pub(crate) fn has_session(window: &WebviewWindow) -> Result<bool, String> {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64;
-    Ok(window
-        .cookies_for_url(HOME.parse().unwrap())
+    Ok(crate::browser_cookies::for_url(window, HOME.parse().unwrap())
         .map_err(|_| "无法读取哔哩哔哩登录状态")?
         .iter()
         .any(|c| {

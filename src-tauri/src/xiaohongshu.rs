@@ -45,14 +45,15 @@ pub(crate) fn window(app: &AppHandle) -> Result<WebviewWindow, String> {
     .inner_size(1060., 760.)
     .min_inner_size(800., 600.)
     .data_directory(directory)
+        .background_throttling(tauri::utils::config::BackgroundThrottlingPolicy::Disabled)
+        .data_store_identifier(*b"framefetch-xhshu")
     .visible(false)
     .on_navigation(allowed_navigation)
     .build()
     .map_err(|_| "无法打开小红书登录窗口".into())
 }
 pub(crate) fn cookie_header(app: &AppHandle) -> Result<String, String> {
-    Ok(window(app)?
-        .cookies_for_url(HOME.parse().unwrap())
+    Ok(crate::browser_cookies::for_url(&window(app)?, HOME.parse().unwrap())
         .map_err(|_| "无法读取小红书会话")?
         .iter()
         .filter(|c| !c.name().contains(['\r', '\n', ';']) && !c.value().contains(['\r', '\n', ';']))
@@ -72,12 +73,13 @@ async fn read_status(login: &WebviewWindow) -> Result<Option<LoginStatus>, Strin
             }
         })
         .map_err(|_| "无法读取小红书登录状态")?;
-    let raw = tokio::time::timeout(std::time::Duration::from_secs(3), rx)
-        .await
-        .map_err(|_| "小红书登录状态读取超时")?
-        .map_err(|_| "登录窗口已关闭")?;
-    let mut value: Option<LoginStatus> =
-        serde_json::from_str(&raw).map_err(|_| "登录状态读取失败")?;
+    // Startup/navigation can discard an evaluation callback on WKWebView.
+    // None means "not ready"; callers retry within their existing time limits.
+    let raw = match tokio::time::timeout(std::time::Duration::from_secs(3), rx).await {
+        Ok(Ok(raw)) => raw,
+        _ => return Ok(None),
+    };
+    let mut value = decode_status(&raw)?;
     if let Some(s) = &mut value {
         s.avatar = s
             .avatar
@@ -87,6 +89,12 @@ async fn read_status(login: &WebviewWindow) -> Result<Option<LoginStatus>, Strin
     }
     Ok(value)
 }
+fn decode_status(raw: &str) -> Result<Option<LoginStatus>, String> {
+    // Wry returns an empty string when WebKit has no evaluation result.
+    if raw.trim().is_empty() { return Ok(None); }
+    serde_json::from_str(raw).map_err(|_| "小红书登录状态格式异常，请刷新登录页面后重试".into())
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QrStatus {
@@ -264,7 +272,7 @@ pub async fn xiaohongshu_login_status(
     if attempt.is_some() {
         return Ok(read_status(&login).await?.unwrap_or_default());
     }
-    if login.url().map_err(|e| e.to_string())?.as_str() == "about:blank" {
+    if crate::webview_url::current(&login).await?.as_str() == "about:blank" {
         login
             .navigate(HOME.parse().unwrap())
             .map_err(|e| e.to_string())?;
@@ -327,6 +335,15 @@ pub async fn xiaohongshu_logout(
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn distinguishes_loading_from_logged_out_and_invalid_status() {
+        assert!(super::decode_status("").unwrap().is_none());
+        assert!(super::decode_status("null").unwrap().is_none());
+        let status = super::decode_status(r#"{"sessionPresent":false,"name":null,"avatar":null}"#).unwrap().unwrap();
+        assert!(!status.session_present);
+        assert!(super::decode_status("{}").is_err());
+    }
+
     use super::*;
     #[test]
     fn restrict_login_navigation() {

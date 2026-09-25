@@ -1,135 +1,161 @@
-<p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="FrameFetch · 拾帧：把喜欢的片段留在本地，支持 Telegram、哔哩哔哩、抖音与小红书。">
-</p>
+<h1 align="center">FrameFetch · 拾帧</h1>
 
 <p align="center">
-  <strong>一个桌面窗口，管理多个平台的媒体下载。</strong><br>
-  视频、图片、封面与音频，保存到本地，按平台和作品整理。
+  <strong>为自己的作品与获授权的素材，留一份有序的本地存档。</strong><br>
+  面向个人媒体归档、创作者素材备份及技术研究的桌面工具。
 </p>
 
+<p align="center">Windows / macOS · Tauri + Rust + React · MIT</p>
+
 <p align="center">
+  <a href="#功能概览">功能概览</a> ·
   <a href="#开始使用">开始使用</a> ·
-  <a href="#平台能力">平台能力</a> ·
-  <a href="https://github.com/HoshiSaneko/framefetch/issues">反馈问题</a> ·
-  <a href="https://github.com/HoshiSaneko">作者 Saneko</a>
+  <a href="#使用约定">使用约定</a> ·
+  <a href="https://github.com/HoshiSaneko/framefetch/issues">反馈问题</a>
 </p>
 
-<p align="center">Windows · Material Design 3 · Tauri + Rust + React · MIT</p>
+FrameFetch（拾帧）将媒体保存、任务管理和本地整理放在同一个桌面窗口中。你可以通过受支持的内容链接，为自己的作品或已获授权的素材建立本地副本，并按来源与作品整理视频、图片、封面和音频。
 
-![拾帧下载中心：统一查看文件、下载进度与任务状态；图中为开发预览的示例任务。](./assets/readme/download-center.jpg)
+> 本项目仅用于个人媒体归档、创作者素材备份及技术研究。用户应仅下载自己拥有合法权利或已获得授权的内容，并自行遵守相关法律法规及第三方平台服务协议。
 
-<p align="center"><sub>实际界面，演示数据。截图中的文件、速度与进度仅用于展示，不代表性能测试。</sub></p>
+![拾帧任务界面：统一查看文件、传输进度与归档状态。](./assets/readme/download-center.jpg)
 
-## 下载之后，也好找到
+<p align="center"><sub>截图使用演示数据，其中的文件、速度与进度仅用于界面展示，不代表性能测试。</sub></p>
 
-FrameFetch（拾帧）是一款桌面媒体下载与整理工具。粘贴链接、选择内容、加入队列，在同一个窗口查看进度，再从本地打开文件。
+## 功能概览
 
-- **任务放在一起看。** 按平台、状态或文件名筛选，快速找到进行中、暂停和需要处理的任务。
-- **内容按需要保存。** 支持的平台可选择视频清晰度、封面、音频或图集内容，具体能力见下表。
-- **文件按作品整理。** 下载内容按平台和作品归档，支持本地图片、视频预览和打开所在文件夹。
-- **删除由你决定。** 移除记录与删除本地文件分开选择，登录会话和下载记录保存在本机。
-
-## 平台能力
-
-| 平台 | 可以做什么 |
-| --- | --- |
-| **Telegram** | 消息链接下载、批量添加、暂停与断点续传 |
-| **哔哩哔哩** | 选择视频清晰度，下载视频、封面或音频 |
-| **抖音** | 作品下载，以及收藏、合集等批量任务 |
-| **小红书** | 视频、封面、音频下载与图集勾选 |
+- **统一管理任务。** 查看队列与传输进度，按来源、状态或文件名筛选记录。
+- **选择所需素材。** 根据内容实际提供的选项，保存视频、图片、封面或音频。
+- **按作品整理文件。** 将素材归入对应目录，支持本地图片、视频预览及打开所在文件夹。
+- **保留清晰的操作边界。** 移除记录与删除本地文件分开确认，登录会话和任务记录保存在本机。
 
 <details>
-<summary>查看平台连接界面</summary>
+<summary>支持的内容来源与能力</summary>
 
-![拾帧平台连接页面：Telegram、哔哩哔哩、抖音和小红书的连接入口；截图未连接账号。](./assets/readme/platforms.jpg)
+以下为技术兼容范围，使用时仍需确认内容权利与平台规则。能够访问或解析内容，不代表已经获得下载、复制或再分发授权。
 
-实际界面的开发预览，未连接真实账号。需要登录的平台可在这里完成连接。
+| 内容来源 | 当前能力 |
+| --- | --- |
+| Telegram | 指定消息链接、批量添加、暂停与断点续传 |
+| 哔哩哔哩 | 视频清晰度选择，以及视频、封面或音频保存 |
+| 抖音 | 作品保存，以及收藏、合集等批量任务 |
+| 小红书 | 视频、封面、音频保存与图集选择 |
+
+部分功能需要连接账号。私密 Telegram 频道要求当前账号已加入；不支持保存阅后即焚媒体。可用清晰度、媒体类型与任务结果取决于来源接口、账号权限、内容状态及网络条件。
+
+![拾帧账号连接界面，截图中未连接真实账号。](./assets/readme/platforms.jpg)
 
 </details>
 
 ## 开始使用
 
-当前提供 **Windows 源码运行与打包流程**。先准备 Node.js、Rust、Windows C++ Build Tools 和 WebView2，再在 PowerShell 中执行：
+当前以源码运行与本机构建为主。请先安装 Node.js、npm、Rust，以及对应系统的构建工具，再获取项目：
 
-```powershell
+```bash
 git clone https://github.com/HoshiSaneko/framefetch.git
 cd framefetch
 npm ci
 ```
 
-**准备下载组件。** 将 FFmpeg 与 FFprobe 放在同一个目录，然后执行下面的脚本。请把示例路径替换为自己的实际目录：
+### Windows
+
+准备 Windows C++ Build Tools 和 WebView2。将 FFmpeg 与 FFprobe 放在同一目录，然后在项目根目录的 PowerShell 中执行：
 
 ```powershell
 ./scripts/prepare-bilibili.ps1 -FFmpegDirectory "C:/tools/ffmpeg/bin"
-```
-
-脚本下载并校验 yt-dlp，并将 FFmpeg、FFprobe 复制到 `src-tauri/bin/`。这些可执行文件不纳入 Git；部分下载、音频提取和封装功能依赖它们。组件信息见 [下载组件说明](src-tauri/bin/README.txt)。
-
-**启动桌面应用：**
-
-```powershell
 npm run desktop
 ```
 
-1. 在「平台连接」中连接需要登录的平台。Telegram 默认内置 API 配置，直接扫码即可。
-2. 点击「新建下载」或按 `Ctrl + N`，粘贴链接并选择需要保存的内容。
-3. 加入队列，查看进度；完成后打开文件或所在文件夹。
+请将示例路径替换为实际目录。脚本会下载并校验 yt-dlp，再复制 FFmpeg 与 FFprobe。虽然脚本名称包含 `bilibili`，准备的组件也供其他相关媒体处理功能使用。
 
-默认文件保存到程序所在目录的 `downloads` 文件夹。
+### macOS
 
-### 先看看界面
+要求 **macOS 14 或更高版本**，并安装 Xcode Command Line Tools。此版本要求用于各内容来源的独立 WebKit 登录会话存储。
 
-```powershell
+在项目根目录执行：
+
+```bash
+bash scripts/prepare-macos.sh
+npm run desktop
+```
+
+脚本根据本机架构准备 macOS 版 yt-dlp、FFmpeg 与 FFprobe，并校验下载文件。FFmpeg 静态构建来自 [OSXExperts](https://www.osxexperts.net/)。应用优先使用随包组件，也可查找 Homebrew 常见安装目录及 `PATH` 中的组件。
+
+Apple Silicon 已完成本机编译、测试和启动验证；Intel 准备脚本已提供，尚未在 Intel 设备上验证。请在目标架构的 Mac 上准备组件和构建应用。
+
+若 Rust 安装在项目的 `.tools/cargo` 与 `.tools/rustup` 中，启动脚本会自动使用该工具链。常规 Rust 安装可直接通过 `PATH` 使用。
+
+### 保存第一份素材
+
+1. 确认内容属于自己，或已获得相应授权；按需在「平台连接」中连接账号。
+2. 点击「新建下载」，粘贴内容链接并选择所需素材。Windows 快捷键为 `Ctrl+N`，macOS 为 `⌘N`。
+3. 加入队列，查看任务进度；完成后在本地预览或打开所在文件夹。
+
+| 系统 | 默认保存位置 |
+| --- | --- |
+| Windows | 程序所在目录的 `downloads` 文件夹 |
+| macOS | `~/Downloads/FrameFetch` |
+
+第三方组件的可执行文件不纳入 Git，部分媒体保存、音频提取和封装功能依赖这些组件。详细信息见 [组件说明](src-tauri/bin/README.txt)。
+
+### 界面预览
+
+```bash
 npm run dev
 ```
 
-打开 [本地界面预览](http://127.0.0.1:1420/)。需要示例任务时，使用 [演示预览](http://127.0.0.1:1420/?design-preview)。浏览器预览仅展示界面，实际登录与下载请使用桌面版。
+打开 [本地预览](http://127.0.0.1:1420/) 或带示例任务的 [演示预览](http://127.0.0.1:1420/?design-preview)。浏览器预览用于查看界面，实际账号连接与媒体保存需要桌面版。
 
-## 使用边界
+## 使用约定
 
-- 下载结果取决于平台接口、账号权限、内容状态和网络条件；部分功能需要登录。
-- Telegram 处理指定消息链接，私密频道需当前账号已加入；不支持保存阅后即焚媒体。
-- 可选清晰度与媒体类型以实际解析结果为准，不保证每条链接都提供全部选项。
-- 当前开发与打包流程面向 Windows，尚未声明 macOS 或 Linux 可用。
+- **确认内容权利。** 仅处理自己拥有合法权利或已获授权的内容；公开可访问、个人使用或技术研究本身不等于获得授权。
+- **遵守来源规则。** 使用时应遵守适用法律法规及第三方平台服务协议，尊重访问限制、账号权限与内容保护措施。
+- **尊重隐私与作品权益。** 不将本工具用于未经授权的收集、传播、商业利用或其他侵害他人权益的行为。
+- **区分软件与内容许可。** 本项目的 MIT 许可证仅适用于项目代码，不授予任何第三方媒体内容的使用权。
 
-<details>
-<summary>开发、测试与打包</summary>
+本项目为独立开源工具，与所列第三方平台不存在官方关联、授权或背书关系。平台名称及标识仅用于说明兼容范围，相关权利归各自权利人所有。
+
+## 开发与构建
+
+React 负责界面，Tauri 提供桌面容器与系统交互，Rust 负责后台任务及本地存储。
 
 ### 验证
 
-```powershell
+```bash
 npm test -- --maxWorkers=2
 npm run build
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 ```
 
+最后一条命令需要 `cargo` 已加入当前终端的 `PATH`。平台账号连接与真实内容保存还需结合实际授权账号和素材进行验证；Linux 尚未验证。
+
 ### 打包
 
-准备好下载组件后执行：
+先在目标系统上准备媒体组件，再执行：
 
-```powershell
-npm run tauri -- build
+```bash
+npm run desktop:bundle
 ```
 
-便携分发时，请保留程序旁的 `bin` 文件夹，以及对应组件的许可证与构建说明。
+产物位于 `src-tauri/target/release/bundle/`：Windows 生成 NSIS 安装包，macOS 生成 `.app` 和 `.dmg`。macOS 构建尚未配置 Apple Developer 分发签名与公证。
 
-### 目录
+仅编译可执行文件可使用 `npm run desktop:build`。Windows 便携分发需保留程序旁的 `bin` 文件夹；macOS 应保留完整 `.app` 包内的资源。分发第三方组件时，应一并保留对应许可证与构建说明。
+
+### 项目结构
 
 | 路径 | 内容 |
 | --- | --- |
 | `src/` | React 界面、交互和前端测试 |
-| `src-tauri/src/` | 平台连接、下载调度与本地存储 |
-| `src-tauri/bin/` | 第三方下载组件及说明 |
-| `public-brand/` | 应用与平台图标 |
-| `scripts/` | 组件准备与图标生成工具 |
+| `src-tauri/src/` | 内容来源接入、任务调度与本地存储 |
+| `src-tauri/bin/` | 第三方媒体组件及说明 |
+| `public-brand/` | 应用与内容来源图标 |
+| `scripts/` | 组件准备、桌面启动与图标生成工具 |
 
-仓库中的 `src-tauri/telegram-app.json` 在编译时嵌入程序，无需额外填写。若需要自己的 API，可参考 `src-tauri/telegram-app.example.json` 修改。账号会话与下载记录仍只保存在本机。
+`src-tauri/telegram-app.json` 在编译时嵌入应用。需要使用自己的 Telegram API 配置时，可参考 `src-tauri/telegram-app.example.json`。账号会话与任务记录保存在本机。
 
-</details>
+## 许可证
 
-## 开源与致谢
-
-FrameFetch 使用 React、Tauri、grammers、Lucide、yt-dlp 和 FFmpeg 等开源组件。项目采用 [MIT License](LICENSE)；第三方组件保留各自的许可，平台标识归各自权利人所有。
+FrameFetch 采用 [MIT License](LICENSE)，第三方组件遵循各自许可证。
 
 ---
 

@@ -103,7 +103,7 @@ pub async fn request(
     if !douyin::has_session(&login)? {
         return Err("请先登录抖音".into());
     }
-    if login.url().map_err(|e| e.to_string())?.as_str() == "about:blank" {
+    if crate::webview_url::current(&login).await?.as_str() == "about:blank" {
         login
             .navigate("https://www.douyin.com/user/self".parse().unwrap())
             .map_err(|e| e.to_string())?;

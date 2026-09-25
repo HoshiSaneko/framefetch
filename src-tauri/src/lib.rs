@@ -1,3 +1,6 @@
+mod browser_cookies;
+mod webview_url;
+mod media_tools;
 mod xiaohongshu;
 mod xiaohongshu_download;
 mod bilibili;
@@ -36,7 +39,11 @@ pub fn run() {
         .setup(|app| {
             bilibili::clean_stale_exports(app.handle()).map_err(std::io::Error::other)?;
             let root = app.path().app_data_dir()?;
+            #[cfg(target_os = "macos")]
+            let downloads = app.path().download_dir()?.join("FrameFetch");
+            #[cfg(not(target_os = "macos"))]
             let executable = std::env::current_exe()?;
+            #[cfg(not(target_os = "macos"))]
             let downloads = executable
                 .parent()
                 .ok_or_else(|| std::io::Error::other("无法确定程序所在目录"))?

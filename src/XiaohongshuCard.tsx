@@ -1,3 +1,4 @@
+import { PlatformNotice } from "./PlatformNotice";
 import { useEffect, useState } from "react";
 import { ArrowRight, UserRound } from "lucide-react";
 import { createPortal } from "react-dom";
@@ -16,7 +17,7 @@ export function XiaohongshuCard({onConnectionChange}:{onConnectionChange?:(conne
     if(!desktop)return;
     let alive=true;
     void api.xiaohongshuStatus().then(s=>{if(alive){setStatus(s);onConnectionChange?.(s.sessionPresent);}})
-      .catch(()=>{if(alive)setError("登录状态暂时无法读取");});
+      .catch(e=>{if(alive)setError(typeof e === "string" ? e : e instanceof Error ? e.message : "登录状态暂时无法读取");});
     return ()=>{alive=false;};
   },[]);
   const logout=async()=>{
@@ -27,7 +28,7 @@ export function XiaohongshuCard({onConnectionChange}:{onConnectionChange?:(conne
   };
   return <section className="platform-card xiaohongshu">
     <PlatformCardHeader id="xiaohongshu" name="小红书" connected={connected}/>
-    {error&&!connecting&&<p className="inline-error" role="alert">{error}</p>}
+    {error&&!connecting&&<PlatformNotice platform="小红书" message={error} onClose={() => setError("")}/>}
     <div className="platform-card-bottom">{connected?<>
       <span className="connected-name douyin-account" title={status?.name||"小红书账号"}>{status?.avatar&&!avatarFailed?<img className="account-avatar" src={status.avatar} referrerPolicy="no-referrer" alt="账号头像" onError={()=>setAvatarFailed(true)}/>:<span className="account-avatar account-avatar-fallback"><UserRound size={17}/></span>}<span className="account-nickname">{status?.name||"小红书账号"}</span></span>
       <button className="text-button" disabled={busy} onClick={()=>void logout()}>{busy?"正在断开…":"断开连接"}</button>

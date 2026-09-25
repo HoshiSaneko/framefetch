@@ -104,12 +104,14 @@ pub(crate) fn window(app: &AppHandle) -> Result<WebviewWindow, String> {
     std::fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
     WebviewWindowBuilder::new(app, LABEL, WebviewUrl::External("about:blank".parse().unwrap()))
         .title("抖音登录 · FrameFetch").inner_size(1060.0, 760.0).min_inner_size(800.0, 600.0)
-        .data_directory(directory).visible(false).on_navigation(allowed_navigation)
+        .data_directory(directory)
+        .background_throttling(tauri::utils::config::BackgroundThrottlingPolicy::Disabled)
+        .data_store_identifier(*b"framefetch-douy1").visible(false).on_navigation(allowed_navigation)
         .build().map_err(|e| format!("无法打开抖音登录窗口：{e}"))
 }
 pub(crate) fn has_session(window: &WebviewWindow) -> Result<bool, String> {
     let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
-    Ok(window.cookies_for_url(HOME.parse().unwrap()).map_err(|_| "无法读取抖音登录状态")?.iter().any(|c| {
+    Ok(crate::browser_cookies::for_url(window, HOME.parse().unwrap()).map_err(|_| "无法读取抖音登录状态")?.iter().any(|c| {
         matches!(c.name(), "sessionid" | "sessionid_ss") && !c.value().is_empty()
             && c.expires_datetime().is_none_or(|expiry| expiry.unix_timestamp() > now)
     }))

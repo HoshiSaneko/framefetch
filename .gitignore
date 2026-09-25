@@ -36,3 +36,8 @@ __pycache__/
 *.pyc
 Thumbs.db
 .DS_Store
+
+.tools/
+src-tauri/bin/yt-dlp
+src-tauri/bin/ffmpeg
+src-tauri/bin/ffprobe

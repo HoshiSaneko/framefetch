@@ -1,3 +1,4 @@
+use crate::media_tools::tool;
 use crate::{
     bilibili,
     engine::{output_name, Engine, Shared},
@@ -114,26 +115,7 @@ async fn resolve(input: &str) -> Result<String, String> {
     }
     Err("短链接跳转次数过多".into())
 }
-fn tool(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
-    let mut roots = vec![app
-        .path()
-        .resource_dir()
-        .map_err(|e| e.to_string())?
-        .join("bin")];
-    if cfg!(debug_assertions) {
-        roots.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bin"));
-    }
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(p) = exe.parent() {
-            roots.push(p.join("bin"));
-        }
-    }
-    roots
-        .into_iter()
-        .map(|p| p.join(name))
-        .find(|p| p.is_file())
-        .ok_or_else(|| format!("缺少下载组件 {name}，请重新安装完整版本"))
-}
+
 struct CookieFile(PathBuf);
 impl Drop for CookieFile {
     fn drop(&mut self) {
@@ -150,8 +132,7 @@ fn cookies(app: &AppHandle) -> Result<CookieFile, String> {
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join(format!("cookies-{}.txt", uuid::Uuid::new_v4()));
     let mut text = String::from("# Netscape HTTP Cookie File\n");
-    for c in window
-        .cookies_for_url("https://www.bilibili.com/".parse().unwrap())
+    for c in crate::browser_cookies::for_url(&window, "https://www.bilibili.com/".parse().unwrap())
         .map_err(|_| "无法读取 Bilibili 会话")?
     {
         let domain = c.domain().unwrap_or(".bilibili.com");
@@ -197,7 +178,7 @@ fn cookies(app: &AppHandle) -> Result<CookieFile, String> {
     Ok(guard)
 }
 fn command(app: &AppHandle, cookie: &CookieFile) -> Result<Command, String> {
-    let mut c = Command::new(tool(app, "yt-dlp.exe")?);
+    let mut c = Command::new(tool(app, "yt-dlp")?);
     c.args([
         "--ignore-config",
         "--encoding",
@@ -217,6 +198,8 @@ fn command(app: &AppHandle, cookie: &CookieFile) -> Result<Command, String> {
     .arg(&cookie.0)
     .stdin(Stdio::null())
     .kill_on_drop(true);
+    #[cfg(unix)]
+    c.process_group(0);
     #[cfg(windows)]
     c.creation_flags(0x08000000);
     Ok(c)
@@ -442,7 +425,7 @@ pub async fn enqueue_bilibili(
         return Err("此视频没有可用音频".into());
     }
     if selection.kind != "cover" {
-        tool(&app, "ffmpeg.exe")?;
+        tool(&app, "ffmpeg")?;
     }
     let mut data = state.0.data.lock().await;
     if data.tasks.iter().any(|t| {
@@ -552,6 +535,13 @@ async fn stop(child: &mut tokio::process::Child) {
             .stderr(Stdio::null());
         let _ = c.status().await;
     }
+    #[cfg(unix)]
+    if let Some(id) = child.id() {
+        // Stop ffmpeg descendants together with their yt-dlp parent.
+        let _ = Command::new("/bin/kill")
+            .args(["-KILL", "--", &format!("-{id}")])
+            .stdout(Stdio::null()).stderr(Stdio::null()).status().await;
+    }
     let _ = child.kill().await;
     let _ = child.wait().await;
 }
@@ -629,7 +619,7 @@ pub async fn transfer(
         return cover(engine, job, control, app, &dir).await;
     }
     let cookie = cookies(app)?;
-    let ffmpeg = tool(app, "ffmpeg.exe")?;
+    let ffmpeg = tool(app, "ffmpeg")?;
     let mut cmd = command(app, &cookie)?;
     cmd.arg("--ffmpeg-location")
         .arg(ffmpeg.parent().unwrap())

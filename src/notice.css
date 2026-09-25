@@ -1,0 +1,46 @@
+.notice-stack {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(400px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: 8px;
+  margin: -8px;
+  box-sizing: content-box;
+  pointer-events: none;
+}
+.notice {
+  --notice-accent: #506b99;
+  --notice-tint: #eaf0f9;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--md-sys-color-outline-variant, #e5e3df);
+  border-radius: 18px;
+  background: var(--md-sys-color-surface, #fdfcf9);
+  color: var(--md-sys-color-on-surface, #34383f);
+  box-shadow: 0 6px 24px #262a3317, 0 1px 3px #262a3308;
+  pointer-events: auto;
+  animation: notice-enter 180ms ease-out;
+}
+.notice--success { --notice-accent: #3b7760; --notice-tint: #e7f1eb; }
+.notice--warning { --notice-accent: #946524; --notice-tint: #f8efdc; }
+.notice--error { --notice-accent: #aa514b; --notice-tint: #f8e9e7; }
+.notice-icon { display: grid; place-items: center; flex: 0 0 32px; height: 32px; border-radius: 11px; background: var(--notice-tint); color: var(--notice-accent); }
+.notice-content { flex: 1; min-width: 0; padding-top: 2px; }
+.notice-content strong { display: block; font-size: 14px; line-height: 1.5; font-weight: 600; }
+.notice-content p { margin: 4px 0 0; font-size: 13px; line-height: 1.65; color: var(--md-sys-color-on-surface-variant, #626772); overflow-wrap: anywhere; white-space: pre-wrap; }
+.notice-action { margin-top: 10px; padding: 4px 0; border: 0; background: transparent; color: var(--notice-accent); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.notice-close { display: grid; place-items: center; flex: 0 0 28px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: #676b74; cursor: pointer; }
+.notice-close:hover { background: #77777712; }
+.notice-action:hover { text-decoration: underline; }
+.notice-close:focus-visible, .notice-action:focus-visible { outline: 2px solid var(--notice-accent); outline-offset: 3px; }
+@keyframes notice-enter { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .notice { animation: none; } }
+@media (max-width: 480px) { .notice-stack { top: 16px; right: 16px; width: calc(100vw - 32px); max-height: calc(100dvh - 32px); } }
